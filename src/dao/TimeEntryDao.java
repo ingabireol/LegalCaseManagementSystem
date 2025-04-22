@@ -25,14 +25,13 @@ public class TimeEntryDao {
     private String db_passwd = "Ornella12345!";
     
     // Other DAOs for related entities
-    private CaseDao caseDao;
+    public  CaseDao caseDao = new CaseDao();
     private AttorneyDao attorneyDao;
     
     /**
      * Constructor
      */
     public TimeEntryDao() {
-        this.caseDao = new CaseDao();
         this.attorneyDao = new AttorneyDao();
     }
     

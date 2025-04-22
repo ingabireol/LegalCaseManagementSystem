@@ -4,6 +4,7 @@ import model.Attorney;
 import model.Case;
 
 import java.sql.Connection;
+import java.sql.Date;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -434,4 +435,72 @@ public class AttorneyDao {
             }
         }
     }
+    /**
+ * Finds cases by attorney ID
+ * 
+ * @param attorneyId The attorney ID to search for
+ * @return List of cases for the attorney
+ */
+public List<Case> findCasesByAttorney(int attorneyId) {
+    try {
+        Connection con = DriverManager.getConnection(db_url, db_username, db_passwd);
+        String sql = "SELECT c.* FROM cases c " + 
+                     "JOIN case_attorneys ca ON c.id = ca.case_id " +
+                     "WHERE ca.attorney_id = ?";
+        PreparedStatement pst = con.prepareStatement(sql);
+        pst.setInt(1, attorneyId);
+        
+        ResultSet rs = pst.executeQuery();
+        List<Case> caseList = new ArrayList<>();
+        
+        while (rs.next()) {
+            Case legalCase = extractCaseFromResultSet(rs);
+            caseList.add(legalCase);
+        }
+        
+        con.close();
+        return caseList;
+        
+    } catch (Exception ex) {
+        ex.printStackTrace();
+        return Collections.emptyList();
+    }
+}
+/**
+     * Extract case data from a ResultSet row
+     * 
+     * @param rs ResultSet positioned at the case row
+     * @return Case object populated with data
+     * @throws Exception If an error occurs
+     */
+    private Case extractCaseFromResultSet(ResultSet rs) throws Exception {
+        Case legalCase = new Case();
+        
+        legalCase.setId(rs.getInt("id"));
+        legalCase.setCaseNumber(rs.getString("case_number"));
+        legalCase.setTitle(rs.getString("title"));
+        legalCase.setCaseType(rs.getString("case_type"));
+        legalCase.setStatus(rs.getString("status"));
+        legalCase.setDescription(rs.getString("description"));
+        
+        // Handle dates - convert java.sql.Date to LocalDate
+        Date fileDate = rs.getDate("file_date");
+        if (fileDate != null) {
+            legalCase.setFileDate(fileDate.toLocalDate());
+        }
+        
+        Date closingDate = rs.getDate("closing_date");
+        if (closingDate != null) {
+            legalCase.setClosingDate(closingDate.toLocalDate());
+        }
+        
+        legalCase.setCourt(rs.getString("court"));
+        legalCase.setJudge(rs.getString("judge"));
+        legalCase.setOpposingParty(rs.getString("opposing_party"));
+        legalCase.setOpposingCounsel(rs.getString("opposing_counsel"));
+        legalCase.setClientId(rs.getInt("client_id"));
+        
+        return legalCase;
+    }
+
 }

@@ -30,9 +30,7 @@ public class CaseDao {
     private ClientDao clientDao;
     private AttorneyDao attorneyDao;
     private DocumentDao documentDao;
-    private EventDao eventDao;
-    private TimeEntryDao timeEntryDao;
-    
+    private EventDao eventDao;    
     /**
      * Constructor
      */
@@ -41,7 +39,6 @@ public class CaseDao {
         this.attorneyDao = new AttorneyDao();
         this.documentDao = new DocumentDao();
         this.eventDao = new EventDao();
-        this.timeEntryDao = new TimeEntryDao();
     }
     
     /**
@@ -594,8 +591,10 @@ public class CaseDao {
             legalCase.setDocuments(documents);
             
             // Load events
+            
             List<Event> events = eventDao.findEventsByCase(caseId);
             legalCase.setEvents(events);
+            TimeEntryDao timeEntryDao = new TimeEntryDao();
             
             // Load time entries
             List<TimeEntry> timeEntries = timeEntryDao.findTimeEntriesByCase(caseId);
