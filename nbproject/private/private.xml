@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project-private xmlns="http://www.netbeans.org/ns/project-private/1">
+    <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="0"/>
+    <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
+        <group>
+            <file>file:/D:/java/LegalCaseManagementSystem/src/model/Invoice.java</file>
+            <file>file:/D:/java/LegalCaseManagementSystem/src/view/components/TableFilterPanel.java</file>
+            <file>file:/D:/java/LegalCaseManagementSystem/src/view/attorneys/AttorneysPanel.java</file>
+            <file>file:/D:/java/LegalCaseManagementSystem/src/view/LoginView.java</file>
+            <file>file:/D:/java/LegalCaseManagementSystem/src/model/Event.java</file>
+            <file>file:/D:/java/LegalCaseManagementSystem/src/model/Payment.java</file>
+            <file>file:/D:/java/LegalCaseManagementSystem/src/dao/EventDao.java</file>
+            <file>file:/D:/java/LegalCaseManagementSystem/src/view/clients/ClientDetailsDialog.java</file>
+            <file>file:/D:/java/LegalCaseManagementSystem/src/model/User.java</file>
+            <file>file:/D:/java/LegalCaseManagementSystem/src/controller/InvoiceController.java</file>
+            <file>file:/D:/java/LegalCaseManagementSystem/src/controller/LoginController.java</file>
+            <file>file:/D:/java/LegalCaseManagementSystem/src/controller/EventController.java</file>
+            <file>file:/D:/java/LegalCaseManagementSystem/src/model/Attorney.java</file>
+            <file>file:/D:/java/LegalCaseManagementSystem/src/controller/TimeEntryController.java</file>
+            <file>file:/D:/java/LegalCaseManagementSystem/src/view/documents/DocumentsPanel.java</file>
+            <file>file:/D:/java/LegalCaseManagementSystem/src/view/clients/ClientEditorDialog.java</file>
+            <file>file:/D:/java/LegalCaseManagementSystem/src/db/CreateUser.java</file>
+            <file>file:/D:/java/LegalCaseManagementSystem/src/legalcasemanagementsystem/LegalCaseManagementSystem.java</file>
+            <file>file:/D:/java/LegalCaseManagementSystem/src/model/Case.java</file>
+            <file>file:/D:/java/LegalCaseManagementSystem/src/dao/InvoiceDao.java</file>
+            <file>file:/D:/java/LegalCaseManagementSystem/src/dao/TimeEntryDao.java</file>
+            <file>file:/D:/java/LegalCaseManagementSystem/src/view/components/DateChooser.java</file>
+            <file>file:/D:/java/LegalCaseManagementSystem/src/dao/AttorneyDao.java</file>
+            <file>file:/D:/java/LegalCaseManagementSystem/src/dao/CaseDao.java</file>
+            <file>file:/D:/java/LegalCaseManagementSystem/src/model/TimeEntry.java</file>
+            <file>file:/D:/java/LegalCaseManagementSystem/src/view/clients/ClientsPanel.java</file>
+            <file>file:/D:/java/LegalCaseManagementSystem/src/view/util/UIConstants.java</file>
+            <file>file:/D:/java/LegalCaseManagementSystem/src/view/components/CustomTable.java</file>
+            <file>file:/D:/java/LegalCaseManagementSystem/src/controller/UserController.java</file>
+            <file>file:/D:/java/LegalCaseManagementSystem/src/view/cases/CasesPanel.java</file>
+            <file>file:/D:/java/LegalCaseManagementSystem/src/dao/DocumentDao.java</file>
+            <file>file:/D:/java/LegalCaseManagementSystem/src/dao/PaymentDao.java</file>
+            <file>file:/D:/java/LegalCaseManagementSystem/src/view/components/StatusIndicator.java</file>
+            <file>file:/D:/java/LegalCaseManagementSystem/src/controller/DocumentController.java</file>
+            <file>file:/D:/java/LegalCaseManagementSystem/src/view/invoices/InvoicesPanel.java</file>
+            <file>file:/D:/java/LegalCaseManagementSystem/src/dao/ClientDao.java</file>
+            <file>file:/D:/java/LegalCaseManagementSystem/src/model/Document.java</file>
+            <file>file:/D:/java/LegalCaseManagementSystem/src/model/Client.java</file>
+            <file>file:/D:/java/LegalCaseManagementSystem/src/view/cases/CaseDetailsDialog.java</file>
+            <file>file:/D:/java/LegalCaseManagementSystem/src/controller/ClientController.java</file>
+            <file>file:/D:/java/LegalCaseManagementSystem/src/view/admin/AdminPanel.java</file>
+            <file>file:/D:/java/LegalCaseManagementSystem/src/controller/CaseController.java</file>
+            <file>file:/D:/java/LegalCaseManagementSystem/src/dao/LoginDao.java</file>
+            <file>file:/D:/java/LegalCaseManagementSystem/src/controller/AttorneyController.java</file>
+            <file>file:/D:/java/LegalCaseManagementSystem/src/view/util/IconManager.java</file>
+            <file>file:/D:/java/LegalCaseManagementSystem/src/view/calendar/CalendarPanel.java</file>
+            <file>file:/D:/java/LegalCaseManagementSystem/src/view/MainView.java</file>
+        </group>
+    </open-files>
+</project-private>

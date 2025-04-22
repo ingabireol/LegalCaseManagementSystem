@@ -30,7 +30,6 @@ public class InvoiceDao {
     private ClientDao clientDao;
     private CaseDao caseDao;
     private TimeEntryDao timeEntryDao;
-    private PaymentDao paymentDao;
     
     /**
      * Constructor
@@ -39,7 +38,6 @@ public class InvoiceDao {
         this.clientDao = new ClientDao();
         this.caseDao = new CaseDao();
         this.timeEntryDao = new TimeEntryDao();
-        this.paymentDao = new PaymentDao();
     }
     
     /**
@@ -515,9 +513,9 @@ public class InvoiceDao {
             // Load time entries
             List<TimeEntry> timeEntries = timeEntryDao.findTimeEntriesByInvoice(invoiceId);
             invoice.setTimeEntries(timeEntries);
-            
+            PaymentDao dao = new PaymentDao();
             // Load payments
-            List<Payment> payments = paymentDao.findPaymentsByInvoice(invoiceId);
+            List<Payment> payments = dao.findPaymentsByInvoice(invoiceId);
             invoice.setPayments(payments);
             
             return invoice;

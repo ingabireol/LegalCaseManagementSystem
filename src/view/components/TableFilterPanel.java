@@ -8,10 +8,6 @@ import java.util.function.Consumer;
 
 import view.util.UIConstants;
 
-/**
- * Reusable filter panel for tables.
- * Provides common filtering controls for tables.
- */
 public class TableFilterPanel extends JPanel {
     private JTextField searchField;
     private JComboBox<String> filterTypeCombo;
