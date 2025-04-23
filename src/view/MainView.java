@@ -81,8 +81,8 @@ public class MainView extends JFrame {
     private void initializeUI() {
         setTitle("Legal Case Management System");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(1200, 800);
-        setMinimumSize(new Dimension(1000, 700));
+        setSize(1200, 1200);
+        setMinimumSize(new Dimension(1200, 1200));
         setLocationRelativeTo(null); // Center on screen
         
         try {

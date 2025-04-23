@@ -5,30 +5,52 @@ import javax.swing.border.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.ArrayList;
 
+import model.Event;
+import model.Case;
 import controller.EventController;
+import controller.CaseController;
 import view.util.UIConstants;
 import view.components.TableFilterPanel;
+import view.util.SwingUtils;
 
 /**
  * Panel for calendar and events management in the Legal Case Management System.
  */
 public class CalendarPanel extends JPanel {
     private EventController eventController;
+    private CaseController caseController;
     private LocalDate currentDate;
+    private LocalDate selectedDate;
     private JPanel calendarGrid;
     private JLabel monthYearLabel;
+    private Map<LocalDate, List<Event>> eventsByDate;
+    
+    // UI components for event display
+    private JPanel eventDetailsPanel;
+    private JList<Event> dayEventsList;
+    private DefaultListModel<Event> eventsListModel;
+    private JLabel selectedDateLabel;
     
     /**
      * Constructor
      */
     public CalendarPanel() {
         this.eventController = new EventController();
+        this.caseController = new CaseController();
         this.currentDate = LocalDate.now();
+        this.selectedDate = currentDate;
+        this.eventsByDate = new HashMap<>();
         
         initializeUI();
+        loadEvents();
     }
     
     /**
@@ -42,9 +64,21 @@ public class CalendarPanel extends JPanel {
         JPanel headerPanel = createHeaderPanel();
         add(headerPanel, BorderLayout.NORTH);
         
+        // Create split pane for calendar and events
+        JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
+        splitPane.setBorder(BorderFactory.createEmptyBorder());
+        splitPane.setDividerLocation(700);
+        splitPane.setResizeWeight(0.7);
+        
         // Create calendar panel
         JPanel calendarPanel = createCalendarPanel();
-        add(calendarPanel, BorderLayout.CENTER);
+        splitPane.setLeftComponent(calendarPanel);
+        
+        // Create event details panel
+        eventDetailsPanel = createEventDetailsPanel();
+        splitPane.setRightComponent(eventDetailsPanel);
+        
+        add(splitPane, BorderLayout.CENTER);
     }
     
     /**
@@ -97,8 +131,18 @@ public class CalendarPanel extends JPanel {
         todayButton.setFocusPainted(false);
         todayButton.addActionListener(e -> {
             currentDate = LocalDate.now();
+            selectedDate = currentDate;
             updateCalendarView();
+            loadEventsForSelectedDate();
         });
+        
+        // Add "New Event" button
+        JButton newEventButton = new JButton("New Event");
+        newEventButton.setFont(UIConstants.NORMAL_FONT);
+        newEventButton.setBackground(UIConstants.SECONDARY_COLOR);
+        newEventButton.setForeground(Color.WHITE);
+        newEventButton.setFocusPainted(false);
+        newEventButton.addActionListener(e -> createNewEvent());
         
         navigationPanel.add(prevMonthButton);
         navigationPanel.add(Box.createHorizontalStrut(10));
@@ -107,11 +151,57 @@ public class CalendarPanel extends JPanel {
         navigationPanel.add(nextMonthButton);
         navigationPanel.add(Box.createHorizontalStrut(20));
         navigationPanel.add(todayButton);
+        navigationPanel.add(Box.createHorizontalStrut(30));
+        navigationPanel.add(newEventButton);
         
         headerPanel.add(titlePanel, BorderLayout.NORTH);
         headerPanel.add(navigationPanel, BorderLayout.CENTER);
         
+        // Add filter panel
+        JPanel filterPanel = createFilterPanel();
+        headerPanel.add(filterPanel, BorderLayout.SOUTH);
+        
         return headerPanel;
+    }
+    
+    /**
+     * Create filter panel for events
+     * 
+     * @return Filter panel
+     */
+    private JPanel createFilterPanel() {
+        JPanel filterPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        filterPanel.setBackground(Color.WHITE);
+        filterPanel.setBorder(BorderFactory.createEmptyBorder(5, 20, 5, 20));
+        
+        JLabel viewByLabel = new JLabel("View:");
+        viewByLabel.setFont(UIConstants.NORMAL_FONT);
+        
+        JComboBox<String> viewTypeCombo = new JComboBox<>(new String[]{"All Events", "Court Dates", "Meetings", "Deadlines"});
+        viewTypeCombo.setFont(UIConstants.NORMAL_FONT);
+        viewTypeCombo.addActionListener(e -> {
+            // Filter events based on selection
+            loadEvents();
+        });
+        
+        JLabel caseLabel = new JLabel("Case:");
+        caseLabel.setFont(UIConstants.NORMAL_FONT);
+        
+        JComboBox<String> caseCombo = new JComboBox<>(new String[]{"All Cases"});
+        caseCombo.setFont(UIConstants.NORMAL_FONT);
+        caseCombo.addActionListener(e -> {
+            // Filter events based on case selection
+            loadEvents();
+        });
+        
+        // Add components to filter panel
+        filterPanel.add(viewByLabel);
+        filterPanel.add(viewTypeCombo);
+        filterPanel.add(Box.createHorizontalStrut(20));
+        filterPanel.add(caseLabel);
+        filterPanel.add(caseCombo);
+        
+        return filterPanel;
     }
     
     /**
@@ -150,6 +240,68 @@ public class CalendarPanel extends JPanel {
     }
     
     /**
+     * Create the event details panel
+     * 
+     * @return The event details panel
+     */
+    private JPanel createEventDetailsPanel() {
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setBackground(Color.WHITE);
+        panel.setBorder(BorderFactory.createEmptyBorder(10, 5, 20, 20));
+        
+        // Selected date header
+        selectedDateLabel = new JLabel("Selected Date: " + selectedDate.toString());
+        selectedDateLabel.setFont(UIConstants.SUBTITLE_FONT);
+        selectedDateLabel.setBorder(BorderFactory.createEmptyBorder(0, 0, 10, 0));
+        
+        // Events list
+        eventsListModel = new DefaultListModel<>();
+        dayEventsList = new JList<>(eventsListModel);
+        dayEventsList.setFont(UIConstants.NORMAL_FONT);
+        dayEventsList.setCellRenderer(new EventListCellRenderer());
+        dayEventsList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        dayEventsList.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (e.getClickCount() == 2) {
+                    viewEventDetails();
+                }
+            }
+        });
+        
+        JScrollPane scrollPane = new JScrollPane(dayEventsList);
+        scrollPane.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
+        
+        // Button panel
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        buttonPanel.setBackground(Color.WHITE);
+        buttonPanel.setBorder(BorderFactory.createEmptyBorder(10, 0, 0, 0));
+        
+        JButton viewButton = new JButton("View");
+        viewButton.setFont(UIConstants.NORMAL_FONT);
+        viewButton.addActionListener(e -> viewEventDetails());
+        
+        JButton editButton = new JButton("Edit");
+        editButton.setFont(UIConstants.NORMAL_FONT);
+        editButton.addActionListener(e -> editSelectedEvent());
+        
+        JButton deleteButton = new JButton("Delete");
+        deleteButton.setFont(UIConstants.NORMAL_FONT);
+        deleteButton.addActionListener(e -> deleteSelectedEvent());
+        
+        buttonPanel.add(viewButton);
+        buttonPanel.add(editButton);
+        buttonPanel.add(deleteButton);
+        
+        // Add components to panel
+        panel.add(selectedDateLabel, BorderLayout.NORTH);
+        panel.add(scrollPane, BorderLayout.CENTER);
+        panel.add(buttonPanel, BorderLayout.SOUTH);
+        
+        return panel;
+    }
+    
+    /**
      * Update the calendar grid based on the current month
      */
     private void updateCalendarView() {
@@ -175,7 +327,13 @@ public class CalendarPanel extends JPanel {
         LocalDate today = LocalDate.now();
         for (int day = 1; day <= daysInMonth; day++) {
             LocalDate date = LocalDate.of(currentDate.getYear(), currentDate.getMonth(), day);
-            JPanel dayCell = createCalendarDayCell(date, date.equals(today));
+            boolean isToday = date.equals(today);
+            boolean isSelected = date.equals(selectedDate);
+            
+            // Get events for this day
+            List<Event> dayEvents = eventsByDate.getOrDefault(date, new ArrayList<>());
+            
+            JPanel dayCell = createCalendarDayCell(date, isToday, isSelected, dayEvents);
             calendarGrid.add(dayCell);
         }
         
@@ -208,11 +366,19 @@ public class CalendarPanel extends JPanel {
      * 
      * @param date The date for the cell
      * @param isToday Whether this date is today
+     * @param isSelected Whether this date is selected
+     * @param events List of events on this date
      * @return Calendar day cell panel
      */
-    private JPanel createCalendarDayCell(LocalDate date, boolean isToday) {
+    private JPanel createCalendarDayCell(LocalDate date, boolean isToday, boolean isSelected, List<Event> events) {
         JPanel cell = new JPanel(new BorderLayout());
-        cell.setBackground(Color.WHITE);
+        
+        // Set background colors
+        if (isSelected) {
+            cell.setBackground(new Color(230, 240, 255)); // Light blue for selected
+        } else {
+            cell.setBackground(Color.WHITE);
+        }
         
         // Add border, highlight today's date
         if (isToday) {
@@ -235,33 +401,60 @@ public class CalendarPanel extends JPanel {
             dayLabel.setFont(UIConstants.NORMAL_FONT.deriveFont(Font.BOLD));
         }
         
-        cell.add(dayLabel, BorderLayout.NORTH);
+        // Create a panel for the day number with padding
+        JPanel dayPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        dayPanel.setOpaque(false);
+        dayPanel.add(dayLabel);
         
-        // Placeholder for events that would be shown in this cell
-        if (date.getDayOfMonth() % 4 == 0) { // Just for demonstration
-            JLabel eventLabel = new JLabel("Sample Event");
-            eventLabel.setFont(UIConstants.SMALL_FONT);
-            eventLabel.setForeground(UIConstants.SECONDARY_COLOR);
-            cell.add(eventLabel, BorderLayout.CENTER);
+        cell.add(dayPanel, BorderLayout.NORTH);
+        
+        // Add events if there are any
+        if (!events.isEmpty()) {
+            // Create events panel
+            JPanel eventsPanel = new JPanel();
+            eventsPanel.setLayout(new BoxLayout(eventsPanel, BoxLayout.Y_AXIS));
+            eventsPanel.setOpaque(false);
+            
+            // Show up to 3 events, with a "+X more" if there are more
+            int eventsToShow = Math.min(events.size(), 3);
+            for (int i = 0; i < eventsToShow; i++) {
+                Event event = events.get(i);
+                JLabel eventLabel = createEventLabel(event);
+                eventsPanel.add(eventLabel);
+            }
+            
+            // Add a "+X more" label if needed
+            if (events.size() > 3) {
+                JLabel moreLabel = new JLabel("+" + (events.size() - 3) + " more");
+                moreLabel.setFont(UIConstants.SMALL_FONT);
+                moreLabel.setForeground(UIConstants.PRIMARY_COLOR);
+                eventsPanel.add(moreLabel);
+            }
+            
+            cell.add(eventsPanel, BorderLayout.CENTER);
         }
         
         // Make cell interactive
         cell.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                showDayEvents(date);
+                selectedDate = date;
+                loadEventsForSelectedDate();
+                updateCalendarView(); // Refresh to show selection
             }
             
             @Override
             public void mouseEntered(MouseEvent e) {
-                if (!isToday) {
+                if (!isToday && !isSelected) {
                     cell.setBackground(UIConstants.ACCENT_COLOR);
                 }
             }
             
             @Override
             public void mouseExited(MouseEvent e) {
-                cell.setBackground(Color.WHITE);
+                if (!isToday && !isSelected) {
+                    cell.setBackground(Color.WHITE);
+                }
             }
         });
         
@@ -269,18 +462,318 @@ public class CalendarPanel extends JPanel {
     }
     
     /**
-     * Show events for a specific day
+     * Create a label for an event in the calendar cell
      * 
-     * @param date The date to show events for
+     * @param event The event
+     * @return Styled event label
      */
-    private void showDayEvents(LocalDate date) {
-        // Placeholder for showing events
-        JOptionPane.showMessageDialog(
-            this,
-            "Events for " + date.toString() + "\n" +
-            "This feature will be fully implemented in the future.",
-            "Day Events",
-            JOptionPane.INFORMATION_MESSAGE
+    private JLabel createEventLabel(Event event) {
+        JLabel label = new JLabel();
+        label.setText(truncateText(event.getTitle(), 15));
+        label.setFont(UIConstants.SMALL_FONT);
+        
+        // Set color based on event type
+        Color eventColor = getEventTypeColor(event.getEventType());
+        label.setForeground(eventColor);
+        
+        // Add a dot before the text
+        label.setBorder(BorderFactory.createEmptyBorder(1, 0, 1, 0));
+        
+        return label;
+    }
+    
+    /**
+     * Get color for event type
+     * 
+     * @param eventType Type of event
+     * @return Color for the event type
+     */
+    private Color getEventTypeColor(String eventType) {
+        if (eventType == null) {
+            return UIConstants.PRIMARY_COLOR;
+        }
+        
+        switch (eventType.toLowerCase()) {
+            case "court appearance":
+            case "hearing":
+            case "trial":
+                return new Color(176, 42, 55); // Red
+                
+            case "meeting":
+            case "conference call":
+                return new Color(46, 204, 113); // Green
+                
+            case "deadline":
+            case "filing":
+                return new Color(241, 196, 15); // Yellow/Orange
+                
+            case "deposition":
+                return new Color(155, 89, 182); // Purple
+                
+            default:
+                return UIConstants.PRIMARY_COLOR; // Default blue
+        }
+    }
+    
+    /**
+     * Truncate text if it's too long
+     * 
+     * @param text Text to truncate
+     * @param maxLength Maximum length
+     * @return Truncated text
+     */
+    private String truncateText(String text, int maxLength) {
+        if (text == null) {
+            return "";
+        }
+        
+        if (text.length() <= maxLength) {
+            return text;
+        }
+        
+        return text.substring(0, maxLength - 3) + "...";
+    }
+    
+    /**
+     * Load events from the database
+     */
+    private void loadEvents() {
+        try {
+            // Clear existing events
+            eventsByDate.clear();
+            
+            // Get start and end date for the current month view
+            YearMonth yearMonth = YearMonth.of(currentDate.getYear(), currentDate.getMonth());
+            LocalDate startDate = yearMonth.atDay(1);
+            LocalDate endDate = yearMonth.atEndOfMonth();
+            
+            // Expand range to include days from previous/next month that appear in the view
+            int firstDayOfWeek = startDate.getDayOfWeek().getValue() % 7; // Adjust for Sunday start
+            startDate = startDate.minusDays(firstDayOfWeek);
+            
+            int lastDayOfWeek = endDate.getDayOfWeek().getValue() % 7;
+            endDate = endDate.plusDays(6 - lastDayOfWeek);
+            
+            // Get events for the date range
+            List<Event> events = eventController.findEventsByDateRange(startDate, endDate);
+            
+            // Organize events by date
+            for (Event event : events) {
+                LocalDate eventDate = event.getEventDate();
+                if (eventDate != null) {
+                    List<Event> dateEvents = eventsByDate.computeIfAbsent(eventDate, k -> new ArrayList<>());
+                    dateEvents.add(event);
+                }
+            }
+            
+            // Update calendar and event list
+            updateCalendarView();
+            loadEventsForSelectedDate();
+            
+        } catch (Exception e) {
+            SwingUtils.showErrorMessage(
+                this,
+                "Error loading events: " + e.getMessage(),
+                "Database Error"
+            );
+            e.printStackTrace();
+        }
+    }
+    
+    /**
+     * Load events for the selected date
+     */
+    private void loadEventsForSelectedDate() {
+        // Update selected date label
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEEE, MMMM d, yyyy");
+        selectedDateLabel.setText("Events for " + selectedDate.format(formatter));
+        
+        // Clear existing events
+        eventsListModel.clear();
+        
+        // Get events for selected date
+        List<Event> events = eventsByDate.getOrDefault(selectedDate, new ArrayList<>());
+        
+        // Add events to the list model
+        for (Event event : events) {
+            eventsListModel.addElement(event);
+        }
+    }
+    
+    /**
+     * Create a new event
+     */
+    private void createNewEvent() {
+        // Show the event editor dialog
+        EventEditorDialog dialog = new EventEditorDialog(
+            SwingUtilities.getWindowAncestor(this), 
+            null,
+            selectedDate,
+            eventController,
+            caseController
         );
+        
+        dialog.setVisible(true);
+        
+        // Refresh the calendar if an event was created
+        if (dialog.isEventSaved()) {
+            loadEvents();
+        }
+    }
+    
+    /**
+     * View details of the selected event
+     */
+    private void viewEventDetails() {
+        Event selectedEvent = dayEventsList.getSelectedValue();
+        if (selectedEvent == null) {
+            SwingUtils.showInfoMessage(
+                this,
+                "Please select an event to view.",
+                "No Event Selected"
+            );
+            return;
+        }
+        
+        // Show event details in a dialog
+        EventDetailsDialog dialog = new EventDetailsDialog(
+            SwingUtilities.getWindowAncestor(this),
+            selectedEvent,
+            eventController,
+            caseController
+        );
+        
+        dialog.setVisible(true);
+        
+        // Refresh the calendar if the event was modified
+        if (dialog.isEventModified()) {
+            loadEvents();
+        }
+    }
+    
+    /**
+     * Edit the selected event
+     */
+    private void editSelectedEvent() {
+        Event selectedEvent = dayEventsList.getSelectedValue();
+        if (selectedEvent == null) {
+            SwingUtils.showInfoMessage(
+                this,
+                "Please select an event to edit.",
+                "No Event Selected"
+            );
+            return;
+        }
+        
+        // Show the event editor dialog
+        EventEditorDialog dialog = new EventEditorDialog(
+            SwingUtilities.getWindowAncestor(this), 
+            selectedEvent,
+            selectedDate,
+            eventController,
+            caseController
+        );
+        
+        dialog.setVisible(true);
+        
+        // Refresh the calendar if the event was edited
+        if (dialog.isEventSaved()) {
+            loadEvents();
+        }
+    }
+    
+    /**
+     * Delete the selected event
+     */
+    private void deleteSelectedEvent() {
+        Event selectedEvent = dayEventsList.getSelectedValue();
+        if (selectedEvent == null) {
+            SwingUtils.showInfoMessage(
+                this,
+                "Please select an event to delete.",
+                "No Event Selected"
+            );
+            return;
+        }
+        
+        // Confirm deletion
+        boolean confirmed = SwingUtils.showConfirmDialog(
+            this,
+            "Are you sure you want to delete the event '" + selectedEvent.getTitle() + "'?",
+            "Confirm Deletion"
+        );
+        
+        if (confirmed) {
+            try {
+                // Delete the event
+                boolean success = eventController.deleteEvent(selectedEvent.getId());
+                
+                if (success) {
+                    SwingUtils.showInfoMessage(
+                        this,
+                        "Event deleted successfully.",
+                        "Success"
+                    );
+                    
+                    // Refresh events
+                    loadEvents();
+                } else {
+                    SwingUtils.showErrorMessage(
+                        this,
+                        "Failed to delete event.",
+                        "Deletion Error"
+                    );
+                }
+                
+            } catch (Exception e) {
+                SwingUtils.showErrorMessage(
+                    this,
+                    "Error deleting event: " + e.getMessage(),
+                    "Database Error"
+                );
+                e.printStackTrace();
+            }
+        }
+    }
+    
+    /**
+     * Custom cell renderer for events in the list
+     */
+    private class EventListCellRenderer extends DefaultListCellRenderer {
+        @Override
+        public Component getListCellRendererComponent(JList<?> list, Object value, 
+                int index, boolean isSelected, boolean cellHasFocus) {
+            super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+            
+            if (value instanceof Event) {
+                Event event = (Event) value;
+                
+                // Format the time if available
+                String timeText = "";
+                if (event.getStartTime() != null) {
+                    DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("h:mm a");
+                    timeText = event.getStartTime().format(timeFormatter);
+                    
+                    if (event.getEndTime() != null) {
+                        timeText += " - " + event.getEndTime().format(timeFormatter);
+                    }
+                    
+                    timeText += " • ";
+                }
+                
+                // Set text with time and title
+                setText(timeText + event.getTitle());
+                
+                // Set icon based on event type
+                // (You can add icons later)
+                
+                // Set foreground color based on event type if not selected
+                if (!isSelected) {
+                    setForeground(getEventTypeColor(event.getEventType()));
+                }
+            }
+            
+            return this;
+        }
     }
 }

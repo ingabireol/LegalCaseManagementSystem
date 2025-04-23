@@ -186,4 +186,19 @@ public class TableFilterPanel extends JPanel {
     public void setSelectedFilterType(String filterType) {
         filterTypeCombo.setSelectedItem(filterType);
     }
+    /**
+     * Set the action to perform when clear button is clicked
+     * 
+     * @param clearAction The clear action
+     */
+    public void setClearAction(Runnable clearAction) {
+        this.clearAction = clearAction;
+        // Update the clear button action
+        if (clearButton != null) {
+            for (ActionListener al : clearButton.getActionListeners()) {
+                clearButton.removeActionListener(al);
+            }
+            clearButton.addActionListener(e -> clearFilters());
+        }
+    }
 }

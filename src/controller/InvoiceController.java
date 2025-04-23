@@ -265,4 +265,8 @@ public class InvoiceController {
             "Cash", "Check", "Credit Card", "Bank Transfer", "Wire Transfer", "PayPal", "Other"
         };
     }
+
+    public String generateNextInvoiceNumber() {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
 }

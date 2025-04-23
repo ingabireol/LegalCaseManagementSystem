@@ -54,7 +54,6 @@ public class IconManager {
         // Try to load the icon
         String fileName = iconName + ".png";
         URL iconUrl = IconManager.class.getResource("/icons/" + fileName);
-        
         if (iconUrl == null) {
             System.err.println("Icon not found: " + fileName);
             return null;

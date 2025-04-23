@@ -2,12 +2,14 @@ package controller;
 
 import dao.TimeEntryDao;
 import dao.AttorneyDao;
+import dao.CaseDao;
 import model.TimeEntry;
 import model.Attorney;
 
 import java.util.List;
 import java.time.LocalDate;
 import java.math.BigDecimal;
+import model.Case;
 
 /**
  * Controller for time entry operations.
@@ -224,4 +226,47 @@ public class TimeEntryController {
             "OTH"  // Other
         };
     }
+
+   /**
+ * Get all time entries for a specific case
+ * 
+ * @param caseId The case ID
+ * @return List of time entries for the case
+ */
+public List<TimeEntry> getCaseTimeEntries(int caseId) {
+    if (caseId <= 0) {
+        throw new IllegalArgumentException("Invalid case ID: " + caseId);
+    }
+    CaseDao caseDao = new CaseDao();
+    // Validate that the case exists
+    Case legalCase = caseDao.findCaseById(caseId);
+    if (legalCase == null) {
+        throw new IllegalArgumentException("Case not found with ID: " + caseId);
+    }
+    
+    // Use the existing DAO method to fetch time entries for this case
+    return timeEntryDao.findTimeEntriesByCase(caseId);
+}
+
+/**
+ * Get unbilled time entries for a specific case
+ * 
+ * @param caseId The case ID
+ * @return List of unbilled time entries for the case
+ */
+public List<TimeEntry> getUnbilledTimeEntries(int caseId) {
+    if (caseId <= 0) {
+        throw new IllegalArgumentException("Invalid case ID: " + caseId);
+    }
+    CaseDao caseDao = new CaseDao();
+    
+    // Validate that the case exists
+    Case legalCase = caseDao.findCaseById(caseId);
+    if (legalCase == null) {
+        throw new IllegalArgumentException("Case not found with ID: " + caseId);
+    }
+    
+    // Use the existing DAO method to fetch unbilled time entries for this case
+    return timeEntryDao.findUnbilledTimeEntriesByCase(caseId);
+}
 }
